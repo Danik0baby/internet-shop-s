@@ -24,38 +24,43 @@ if (menuToggle && mobileMenu) {
 
 const filterButtons = document.querySelectorAll('[data-filter]');
 const productCards = document.querySelectorAll('[data-product-category]');
+const productCount = document.querySelector('[data-product-count]');
 const emptyState = document.querySelector('[data-empty-state]');
 
-filterButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-        const filter = button.dataset.filter;
+const applyFilter = (filter) => {
+    filterButtons.forEach((chip) => {
+        chip.setAttribute('aria-pressed', String(chip.dataset.filter === filter));
+    });
 
-        filterButtons.forEach((chip) => {
-            chip.setAttribute('aria-pressed', String(chip === button));
-        });
+    let visibleProducts = 0;
 
-        let visibleProducts = 0;
+    productCards.forEach((card) => {
+        const matches = filter === 'all' || card.dataset.productCategory === filter;
 
-        productCards.forEach((card) => {
-            const matches = filter === 'all' || card.dataset.productCategory === filter;
+        card.classList.toggle('hidden', !matches);
 
-            card.classList.toggle('hidden', !matches);
-
-            if (matches) {
-                visibleProducts += 1;
-            }
-        });
-
-        if (emptyState) {
-            emptyState.classList.toggle('hidden', visibleProducts > 0);
+        if (matches) {
+            visibleProducts += 1;
         }
     });
+
+    if (emptyState) {
+        emptyState.classList.toggle('hidden', visibleProducts > 0);
+    }
+
+    if (productCount) {
+        productCount.textContent = String(visibleProducts);
+    }
+};
+
+filterButtons.forEach((button) => {
+    button.addEventListener('click', () => applyFilter(button.dataset.filter));
 });
 
 const initialCategory = new URLSearchParams(window.location.search).get('category');
 
-if (initialCategory && filterButtons.length > 0) {
-    document.querySelector(`[data-filter="${CSS.escape(initialCategory)}"]`)?.click();
+if (initialCategory && document.querySelector(`[data-filter="${CSS.escape(initialCategory)}"]`)) {
+    applyFilter(initialCategory);
 }
 
 const cartCounter = document.querySelector('[data-cart-count]');
