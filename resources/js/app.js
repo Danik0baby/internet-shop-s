@@ -52,6 +52,12 @@ filterButtons.forEach((button) => {
     });
 });
 
+const initialCategory = new URLSearchParams(window.location.search).get('category');
+
+if (initialCategory && filterButtons.length > 0) {
+    document.querySelector(`[data-filter="${CSS.escape(initialCategory)}"]`)?.click();
+}
+
 const cartCounter = document.querySelector('[data-cart-count]');
 
 document.querySelectorAll('[data-add-to-cart]').forEach((button) => {
