@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Регистрация — NOVA')
-@section('meta_description', 'Создайте аккаунт NOVA: избранное, история заказов и персональные предложения.')
+@section('title', 'Регистрация — '.config('shop.name', 'NOVA'))
+@section('meta_description', 'Создайте аккаунт: избранное, история заказов и персональные предложения.')
 
 @section('content')
     <section class="container-page py-12 sm:py-16">
@@ -12,9 +12,9 @@
 
                 <div class="relative">
                     <a href="{{ route('home') }}" class="flex items-center gap-2.5">
-                        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-sm font-bold text-white">N</span>
+                        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-sm font-bold text-white">{{ mb_substr(config('shop.name', 'NOVA'), 0, 1) }}</span>
                         <span class="flex flex-col leading-none">
-                            <span class="text-base font-bold tracking-tight text-white">NOVA</span>
+                            <span class="text-base font-bold tracking-tight text-white">{{ config('shop.name', 'NOVA') }}</span>
                             <span class="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500">store</span>
                         </span>
                     </a>
@@ -45,18 +45,15 @@
                 </div>
 
                 <div class="relative mt-12 rounded-2xl border border-white/10 bg-white/5 p-5">
-                    <div class="flex items-center gap-1 text-amber-400" aria-label="Рейтинг 4.9 из 5">
-                        @for ($star = 0; $star < 5; $star++)
-                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path d="M10 15.3 4.1 18.4l1.1-6.6L.5 7.1l6.7-1L10 0l2.8 6.1 6.7 1-4.7 4.7 1.1 6.6z" />
-                            </svg>
-                        @endfor
-                        <span class="ml-2 text-xs font-semibold text-white">4.9</span>
+                    <div class="flex items-center gap-2 text-sm font-semibold text-white">
+                        <svg class="h-5 w-5 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6l-8-3Zm0 5v5m0 3h.01" />
+                        </svg>
+                        Ваши данные защищены
                     </div>
                     <p class="mt-3 text-sm leading-6 text-slate-300">
-                        «Заказывал наушники — привезли на следующий день и помогли настроить. Приятно, когда о тебе думают».
+                        Мы используем защищённое соединение и не передаём контактные данные третьим лицам.
                     </p>
-                    <p class="mt-3 text-xs font-medium text-slate-400">Дмитрий, Москва</p>
                 </div>
             </aside>
 
@@ -70,6 +67,8 @@
                 <h1 class="mt-6 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Регистрация</h1>
                 <p class="mt-3 text-sm leading-6 text-slate-500">
                     Заполните форму — и мы сохраним ваши данные, чтобы покупки проходили быстрее.
+                    Уже есть аккаунт?
+                    <a href="{{ route('login') }}" class="font-semibold text-indigo-600 transition hover:text-indigo-500">Войти</a>
                 </p>
 
                 @if ($errors->any())
