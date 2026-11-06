@@ -67,6 +67,8 @@ class CatalogController extends Controller
 
         return view('catalog.show', [
             'product' => $product,
+            'isFavorite' => auth()->check()
+                && auth()->user()->favorites()->whereKey($product->getKey())->exists(),
             'related' => Product::query()
                 ->where('category_id', $product->category_id)
                 ->whereKeyNot($product->getKey())
