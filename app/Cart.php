@@ -29,8 +29,8 @@ class Cart
             ->keyBy('id');
 
         return collect($quantities)
-            ->filter(fn (int $quantity, int $productId): bool => $products->has($productId))
-            ->map(fn (int $quantity, int $productId): array => [
+            ->filter(fn ($quantity, $productId): bool => $products->has($productId))
+            ->map(fn ($quantity, $productId): array => [
                 'product' => $products->get($productId),
                 'quantity' => $quantity,
                 'total' => $products->get($productId)->price * $quantity,
