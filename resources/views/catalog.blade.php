@@ -1,9 +1,20 @@
 @extends('layouts.app')
 
-@section('title', 'Каталог техники — NOVA')
-@section('meta_description', 'Каталог NOVA: смартфоны, ноутбуки, аудио, гаджеты, аксессуары и умный дом с доставкой по России.')
+@section('title', 'Каталог техники — '.config('shop.name', 'NOVA'))
+@section('meta_description', 'Каталог магазина: актуальные товары, категории и цены. Доставка по России.')
 
 @section('content')
+    @php
+        $activeCategory = $filters['category'] ?? null;
+        $activeSort = $filters['sort'] ?? 'newest';
+        $search = $filters['q'] ?? null;
+        $filterQuery = array_filter([
+            'q' => $search,
+            'sort' => $activeSort !== 'newest' ? $activeSort : null,
+        ], fn ($value) => $value !== null && $value !== '');
+        $hasFilters = $activeCategory !== null || $search !== null || $activeSort !== 'newest';
+    @endphp
+
     <section class="container-page pt-10 sm:pt-14">
         <nav class="flex items-center gap-2 text-xs font-medium text-slate-500" aria-label="Хлебные крошки">
             <a href="{{ route('home') }}" class="transition hover:text-slate-900">Главная</a>
@@ -11,45 +22,106 @@
             <span class="text-slate-900">Каталог</span>
         </nav>
 
-        <div class="mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div class="mt-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <h1 class="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Каталог</h1>
                 <p class="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                    Только проверенная техника: понятные характеристики, честные цены и гарантия на каждое устройство.
+                    Выбирайте технику по категориям, бренду или названию. Все товары добавлены через панель управления магазином.
                 </p>
             </div>
 
             <p class="shrink-0 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
-                Товаров:
-                <span data-product-count class="font-semibold text-slate-900">{{ count($products) }}</span>
+                Найдено: <span class="font-semibold text-slate-900">{{ $products->total() }}</span>
             </p>
         </div>
     </section>
 
     <section class="container-page pb-20 pt-10">
-        <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Фильтр по категориям">
-            <button type="button" data-filter="all" aria-pressed="true" class="filter-chip">Все товары</button>
+        <form method="GET" action="{{ route('catalog') }}" class="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center">
+            @if ($activeCategory)
+                <input type="hidden" name="category" value="{{ $activeCategory }}">
+            @endif
 
-            @foreach ($categories as $key => $category)
-                <button type="button" data-filter="{{ $key }}" aria-pressed="false" class="filter-chip">
-                    <span aria-hidden="true">{{ $category['icon'] }}</span>
-                    {{ $category['label'] }}
-                </button>
+            <div class="relative flex-1">
+                <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.3-4.3M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0Z" />
+                    </svg>
+                </span>
+                <label for="q" class="sr-only">Поиск по каталогу</label>
+                <input
+                    id="q"
+                    name="q"
+                    type="search"
+                    value="{{ $search }}"
+                    placeholder="Поиск по названию или бренду"
+                    class="field-input pl-11"
+                >
+            </div>
+
+            <div class="sm:w-52">
+                <label for="sort" class="sr-only">Сортировка</label>
+                <select id="sort" name="sort" class="field-input">
+                    <option value="newest" @selected($activeSort === 'newest')>Сначала новые</option>
+                    <option value="price_asc" @selected($activeSort === 'price_asc')>Цена: по возрастанию</option>
+                    <option value="price_desc" @selected($activeSort === 'price_desc')>Цена: по убыванию</option>
+                    <option value="rating" @selected($activeSort === 'rating')>По рейтингу</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="submit" class="btn-primary whitespace-nowrap">Применить</button>
+                @if ($hasFilters)
+                    <a href="{{ route('catalog') }}" class="btn-secondary whitespace-nowrap">Сбросить</a>
+                @endif
+            </div>
+        </form>
+
+        <div class="mt-8 flex flex-wrap items-center gap-2" role="group" aria-label="Фильтр по категориям">
+            <a
+                href="{{ route('catalog', $filterQuery) }}"
+                class="filter-chip"
+                aria-pressed="{{ $activeCategory === null ? 'true' : 'false' }}"
+            >
+                Все товары
+            </a>
+
+            @foreach ($categories as $category)
+                <a
+                    href="{{ route('catalog', array_merge($filterQuery, ['category' => $category->slug])) }}"
+                    class="filter-chip"
+                    aria-pressed="{{ $activeCategory === $category->slug ? 'true' : 'false' }}"
+                >
+                    {{ $category->name }}
+                    <span class="text-xs opacity-70">{{ $category->products_count }}</span>
+                </a>
             @endforeach
         </div>
 
-        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-            @foreach ($products as $product)
-                <x-product-card :product="$product" />
-            @endforeach
-        </div>
+        @if ($products->isEmpty())
+            <div class="mt-10 rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+                <span class="text-4xl" aria-hidden="true">🔎</span>
+                @if ($hasFilters)
+                    <h2 class="mt-4 text-lg font-semibold text-slate-900">Ничего не найдено</h2>
+                    <p class="mt-2 text-sm text-slate-500">Попробуйте изменить запрос или выбрать другую категорию.</p>
+                    <a href="{{ route('catalog') }}" class="btn-secondary mt-6">Сбросить фильтры</a>
+                @else
+                    <h2 class="mt-4 text-lg font-semibold text-slate-900">Каталог пока пуст</h2>
+                    <p class="mt-2 text-sm text-slate-500">Товары появятся здесь, как только магазин добавит их через панель управления.</p>
+                    <a href="{{ route('contacts') }}" class="btn-secondary mt-6">Связаться с нами</a>
+                @endif
+            </div>
+        @else
+            <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                @foreach ($products as $product)
+                    <x-product-card :product="$product" />
+                @endforeach
+            </div>
 
-        <div data-empty-state class="mt-8 hidden rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
-            <span class="text-4xl" aria-hidden="true">🔎</span>
-            <h2 class="mt-4 text-lg font-semibold text-slate-900">В этой категории пока пусто</h2>
-            <p class="mt-2 text-sm text-slate-500">Попробуйте выбрать другую категорию — в каталоге есть ещё много интересного.</p>
-            <button type="button" data-filter="all" class="btn-secondary mt-6">Показать все товары</button>
-        </div>
+            <div class="mt-10">
+                {{ $products->links() }}
+            </div>
+        @endif
 
         <div class="mt-14 grid gap-4 rounded-3xl border border-slate-200 bg-white p-6 sm:grid-cols-3 sm:p-8">
             <div class="flex items-start gap-3">
@@ -59,8 +131,8 @@
                     </svg>
                 </span>
                 <div>
-                    <h2 class="text-sm font-semibold text-slate-900">Доставка от 2 дней</h2>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Бесплатно при заказе от 5 000 ₽</p>
+                    <h2 class="text-sm font-semibold text-slate-900">Доставка по России</h2>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">Курьером или самовывозом</p>
                 </div>
             </div>
 
@@ -71,8 +143,8 @@
                     </svg>
                 </span>
                 <div>
-                    <h2 class="text-sm font-semibold text-slate-900">Гарантия 2 года</h2>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Официальный сервис и поддержка</p>
+                    <h2 class="text-sm font-semibold text-slate-900">Гарантия производителя</h2>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">Официальные устройства</p>
                 </div>
             </div>
 
@@ -84,7 +156,7 @@
                 </span>
                 <div>
                     <h2 class="text-sm font-semibold text-slate-900">Поможем с выбором</h2>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Консультация 24/7 в чате и по телефону</p>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">Ответим на вопросы</p>
                 </div>
             </div>
         </div>
